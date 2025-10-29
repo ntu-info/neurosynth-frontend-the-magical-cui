@@ -136,24 +136,16 @@ Saved locally using localStorage as JSON (neurosearch_history_v1).
 
 
 ## Technical Stack
-Component	Description
 
-Frontend	HTML5 + Vanilla JS (ES6)
-
-Styling	Tailwind CSS via CDN
-
-Async Logic	Fetch API with async/await
-
-Backend API	Neurosynth API @ NTU
-
-Local Cache	Browser LocalStorage for history tracking
+* Frontend:	HTML5 + Vanilla JS (ES6)
+* Styling:	Tailwind CSS via CDN
+* Async Logic:	Fetch API with async/await
+* Backend API:	Neurosynth API @ NTU
+* Local Cache:	Browser LocalStorage for history tracking
 
 
-## API Endpoints Summary
-Endpoint	Description
+## API Endpoints Summary (Endpoint&Description)
 
-/terms	List all available keywords
-
-/terms/<term>	List related / co-occurring terms
-
-/query/<query>/studies	Search for studies by logical keywords
+* /terms:	List all available keywords
+* /terms/<term>	List related / co-occurring terms
+* /query/<query>/studies	Search for studies by logical keywords
