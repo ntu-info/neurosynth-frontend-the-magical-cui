@@ -3,224 +3,367 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tren API Frontend · Tailwind</title>
-  <!-- Tailwind Play CDN (no build step needed) -->
+  <title>Explore Neuroscience Research · Tailwind + AJAX</title>
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    // Optional: customize Tailwind (just a tiny tweak)
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            brand: {
-              50: '#f0f7ff',
-              500: '#2563eb'
-            }
-          }
+          colors: { brand: { 50:'#eff6ff', 500:'#76AEA2', 600:'#5E8C84' } }
         }
       }
-    }
+    };
   </script>
 </head>
+
 <body class="min-h-screen bg-slate-50 text-slate-800">
-  <header class="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-10">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">Tren API Frontend</h1>
-      <a href="https://mil.psy.ntu.edu.tw:5000" target="_blank" class="text-sm text-brand-500 hover:underline">Backend @ :5000</a>
-    </div>
-  </header>
+  <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-screen">
+    <!-- Sidebar -->
+    <aside class="bg-slate-900 text-slate-100 p-4 lg:p-6 space-y-6">
+      <h2 class="text-lg font-semibold tracking-tight">
+        Explore neuroscience<br/>Research.
+      </h2>
 
-  <main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
-    <!-- Helper / tips -->
-    <div class="rounded-xl border bg-white p-4 sm:p-5">
-      <p class="text-sm text-slate-600">
-        使用 <span class="font-medium">AJAX (fetch)</span> 
-        <code class="px-1 py-0.5 rounded bg-slate-100">/terms</code>,
-        <code class="px-1 py-0.5 rounded bg-slate-100">/terms/&lt;t1&gt;</code>,
-        <code class="px-1 py-0.5 rounded bg-slate-100">/query/&lt;q&gt;/studies</code>
-      </p>
-    </div>
-
-    <!-- Controls -->
-    <section class="grid gap-4 sm:grid-cols-2">
-      <!-- (1) All terms -->
-      <div class="rounded-xl border bg-white p-4 sm:p-5 space-y-3">
-        <h2 class="text-lg font-semibold">1) 取得所有 Terms</h2>
-        <button id="btnAll" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-white shadow hover:shadow-md transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zM3 11h18v2H3zM3 17h18v2H3z"/></svg>
-          Get all terms
+      <!-- Keywords -->
+      <div class="space-y-2">
+        <button id="btnAll" class="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-4 py-2">
+          Show all keywords
         </button>
-        <p class="text-xs text-slate-500">呼叫 <code>/terms</code></p>
+
+        <!-- A–Z filter bar (All + A..Z) -->
+        <div id="termsFilter" class="flex flex-wrap gap-1"></div>
+
+        <!-- Results (single box) -->
+        <div id="allTerms"
+             class="h-56 overflow-auto rounded-lg bg-white/40 backdrop-blur border border-white/20 p-3 text-sm text-slate-800"></div>
       </div>
 
-      <!-- (2) Related terms -->
-      <div class="rounded-xl border bg-white p-4 sm:p-5 space-y-3">
-        <h2 class="text-lg font-semibold">2) 查某 term 的相關 terms</h2>
-        <div class="flex items-center gap-2">
-          <input id="termInput" type="text" placeholder="e.g. emotion" class="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-          <button id="btnTerm" class="rounded-lg border px-4 py-2 hover:bg-slate-50">Search</button>
+      <!-- History -->
+      <div class="pt-4 border-t border-slate-700/60 space-y-2">
+        <div class="flex items-center justify-between">
+          <h3 class="font-medium">History</h3>
+          <button id="clearHistory" class="text-xs text-slate-300 hover:underline">Clear</button>
         </div>
-        <p class="text-xs text-slate-500">呼叫 <code>/terms/&lt;t1&gt;</code>，常見格式像 <code>{"emotion": ["sadness", ...]}</code></p>
+        <div id="history"
+             class="h-40 overflow-auto rounded-lg bg-white/40 backdrop-blur border border-white/20 p-3 text-sm text-slate-800"></div>
       </div>
+    </aside>
 
-      <!-- (3) Query studies -->
-      <div class="rounded-xl border bg-white p-4 sm:p-5 space-y-3 sm:col-span-2">
-        <h2 class="text-lg font-semibold">3) 以關鍵字搜尋 Studies</h2>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <input id="queryInput" type="text" placeholder="e.g. empathy" class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-          <button id="btnStudy" class="rounded-lg bg-slate-800 px-4 py-2 text-white hover:bg-slate-900">Search studies</button>
+    <!-- Main -->
+    <main class="p-4 lg:p-8 space-y-8">
+      <!-- Associated terms -->
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold">Search for associated terms</h2>
+
+        <div class="flex gap-2">
+          <input id="termInput" class="flex-1 rounded-lg border px-3 py-2" 
+              placeholder="e.g. amygdala" />
+          <button id="btnRelated" class="rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-4 py-2">Search</button>
         </div>
-        <p class="text-xs text-slate-500">呼叫 <code>/query/&lt;q&gt;/studies</code>，回傳研究清單。</p>
-      </div>
-    </section>
 
-    <!-- Output / status -->
-    <section class="rounded-xl border bg-white overflow-hidden">
-      <div class="border-b bg-slate-50/70 px-4 py-2 text-sm text-slate-600 flex items-center justify-between">
-        <div id="status">Ready.</div>
-        <div class="flex items-center gap-2">
-          <span class="hidden sm:inline">View:</span>
-          <div class="inline-flex rounded-lg overflow-hidden border">
-            <button id="viewPretty" class="px-3 py-1.5 text-sm bg-white hover:bg-slate-100">Pretty</button>
-            <button id="viewRaw" class="px-3 py-1.5 text-sm hover:bg-slate-100">Raw JSON</button>
-          </div>
+        <div id="urlTerms" class="text-sm text-slate-500"></div>
+
+        <div class="rounded-2xl bg-white border p-4 min-h-[9rem]">
+          <div class="text-xs text-slate-500 mb-2">Scrollable result</div>
+          <div id="relatedOut" class="max-h-64 overflow-auto"></div>
         </div>
-      </div>
-      <div id="out" class="p-4 text-sm font-mono whitespace-pre-wrap overflow-auto max-h-[60vh]"></div>
-    </section>
-  </main>
+      </section>
 
-  <footer class="max-w-5xl mx-auto px-4 py-10 text-center text-xs text-slate-500">
-    Built with Tailwind + fetch (AJAX). No extra installs required. Deploy on GitHub Pages.
-  </footer>
+      <!-- Studies -->
+      <section class="space-y-3">
+        <h2 class="text-xl font-semibold">Search for studies</h2>
 
+        <div class="flex gap-2">
+          <input id="studyInput" 
+                class="flex-1 rounded-lg border px-3 py-2" 
+                placeholder="Use and, not for logical search. e.g. amygdala not emotion" />
+          <button id="btnStudies" 
+                  class="rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-4 py-2">
+            Search
+          </button>
+        </div>
+
+
+        <div id="urlStudies" class="text-sm text-slate-500"></div>
+
+        <div class="rounded-2xl bg-white border p-4 min-h-[9rem]">
+          <div class="text-xs text-slate-500 mb-2">Scrollable result</div>
+          <div id="studiesOut" class="max-h-[28rem] overflow-auto"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========= Scripts ========= -->
   <script>
-    const API_BASE = 'https://mil.psy.ntu.edu.tw:5000';
-    const statusEl = document.getElementById('status');
-    const outEl = document.getElementById('out');
-    const viewPrettyBtn = document.getElementById('viewPretty');
-    const viewRawBtn = document.getElementById('viewRaw');
+    const API_BASE = 'https://hpc.psy.ntu.edu.tw:5000';
+    const HISTORY_KEY = 'neurosearch_history_v1';
+    const $ = (s) => document.querySelector(s);
+    const escapeHTML = (s) => String(s)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;')
+      .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;");
 
-    let lastData = null; // keep last JSON for switching views
+    const badge = (txt) =>
+      `<span class="inline-flex items-center rounded-full bg-white text-slate-600 px-3 py-1 text-xs mr-2 mb-2">${escapeHTML(txt)}</span>`;
 
-    function setStatus(msg) {
-      statusEl.textContent = msg;
+    const spinner = (msg='Loading…') => `
+      <div class="flex items-center gap-3 text-slate-600 text-sm">
+        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+          <path class="opacity-75" d="M4 12a8 8 0 018-8" stroke-width="4" stroke-linecap="round"></path>
+        </svg>
+        <span>${escapeHTML(msg)}</span>
+      </div>`;
+
+    // ---------- A–Z filter for /terms (single box) ----------
+    let TERMS_CACHE = [];     // all terms
+    let TERMS_FILTER = 'all'; // 'all' or 'a'..'z'
+
+    function renderAlphaBar(){
+      const letters = ['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+      const html = letters.map(L => {
+        const key = L.toLowerCase();
+        const active = (TERMS_FILTER === key);
+        return `<button data-letter="${key}"
+                  class="termflt rounded-md px-2 py-1 text-xs
+                  ${active ? 'bg-brand-500 text-white' : 'bg-white/60 text-slate-700 hover:bg-white'}">
+                  ${L}
+                </button>`;
+      }).join('');
+      $('#termsFilter').innerHTML = html;
+
+      document.querySelectorAll('.termflt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          TERMS_FILTER = btn.dataset.letter;
+          renderAlphaBar();       // refresh active style
+          renderTermsFiltered();  // redraw list
+        });
+      });
     }
 
-    function spinner(msg = 'Loading…') {
-      outEl.innerHTML = `
-        <div class="flex items-center gap-3 text-slate-600">
-          <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
-            <path class="opacity-75" d="M4 12a8 8 0 018-8" stroke-width="4" stroke-linecap="round"></path>
-          </svg>
-          <span>${msg}</span>
+    function renderTermsFiltered(){
+      const box = $('#allTerms');
+      const list = TERMS_CACHE || [];
+      if (!list.length){
+        box.innerHTML = '<div class="text-sm text-slate-600">(no terms)</div>';
+        return;
+      }
+      const filtered = (TERMS_FILTER === 'all')
+        ? list
+        : list.filter(t => String(t).toLowerCase().startsWith(TERMS_FILTER));
+      box.innerHTML = `<div class="flex flex-wrap">${filtered.map(badge).join('')}</div>`;
+    }
+
+    // ---------- History ----------
+    function pushHistory(type, q){
+      const now = new Date().toISOString().slice(0,19).replace('T',' ');
+      const norm = (s) => String(s ?? '').trim().toLowerCase();
+      const key  = `${norm(type)}::${norm(q)}`;
+
+      // 讀取舊資料並移除同 key 的舊紀錄
+      let arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      arr = arr.filter(it => `${norm(it.type)}::${norm(it.q)}` !== key);
+
+      // 插入最新版在最前面
+      arr.unshift({ type, q, at: now });
+
+      // 保留最多 50 筆
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(0,50)));
+
+      // 重新渲染
+      renderHistory();
+    }
+    function renderHistory(){
+      const box = $('#history');
+      const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      if (!arr.length){ box.innerHTML = '<div class="text-slate-700 text-xs">(empty)</div>'; return; }
+      box.innerHTML = arr.map(it => `
+        <div class="hist-item cursor-pointer rounded px-2 py-1 hover:bg-white/30"
+             data-type="${escapeHTML(it.type)}" data-q="${escapeHTML(it.q)}">
+          <div class="text-xs text-slate-600">${escapeHTML(it.at)} · ${escapeHTML(it.type)}</div>
+          <div class="text-sm">${badge(it.q)}</div>
+        </div>`).join('');
+    }
+
+    // ---------- Fetch (robust) ----------
+    async function fetchJSON(path){
+      const url = `${API_BASE}${path}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      try {
+        const resp = await fetch(url, { signal: controller.signal, credentials: 'omit' });
+        clearTimeout(timer);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+
+        let raw = await resp.text();
+        const t = raw.trim();
+        const prefixes = [")]}',", "while(1);", "for(;;);"];
+        for (const p of prefixes) if (t.startsWith(p)) raw = t.slice(p.length);
+        try { return JSON.parse(raw); } catch { return raw; }
+      } catch (err) {
+        // mock fallback (optional)
+        const mockMap = {
+          '/terms': 'data/terms.json',
+          '/terms/fear': 'data/terms_fear.json',
+          '/query/amygdala%20not%20emotion/studies': 'data/studies_amygdala_not_emotion.json'
+        };
+        if (mockMap[path]) {
+          const r = await fetch(mockMap[path]);
+          const txt = await r.text();
+          try { return JSON.parse(txt); } catch { return txt; }
+        }
+        throw err;
+      }
+    }
+
+    // ---------- Renderers ----------
+    // /terms (fills cache + draws A–Z + list)
+    function renderAllTerms(data){
+      const list = Array.isArray(data) ? data
+                  : (data && Array.isArray(data.terms) ? data.terms : []);
+      TERMS_CACHE = list || [];
+      renderAlphaBar();
+      renderTermsFiltered();
+    }
+
+    // /terms/<term> (table with 3 columns)
+    function renderRelated(data){
+      const box = $('#relatedOut');
+      const arr = Array.isArray(data) ? data
+                : (data && Array.isArray(data.related) ? data.related : null);
+
+      if (!arr){
+        box.innerHTML = `<pre class="text-xs">${escapeHTML(typeof data==='string'?data:JSON.stringify(data,null,2))}</pre>`;
+        return;
+      }
+      if (!arr.length){ box.innerHTML = '<div class="text-sm text-slate-500">No related terms.</div>'; return; }
+
+      const head = `
+        <tr>
+          <th class="px-3 py-2 text-left text-xs font-semibold bg-slate-50">Term</th>
+          <th class="px-3 py-2 text-left text-xs font-semibold bg-slate-50">Co-count</th>
+          <th class="px-3 py-2 text-left text-xs font-semibold bg-slate-50">Jaccard</th>
+        </tr>`;
+      const body = arr.map(r => `
+        <tr>
+          <td class="px-3 py-2 border-t text-sm">${escapeHTML(r.term ?? '')}</td>
+          <td class="px-3 py-2 border-t text-sm">${escapeHTML(String(r.co_count ?? ''))}</td>
+          <td class="px-3 py-2 border-t text-sm">${(typeof r.jaccard==='number'? r.jaccard.toFixed(3) : escapeHTML(String(r.jaccard ?? '')))}</td>
+        </tr>`).join('');
+
+      box.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full border rounded">
+            <thead>${head}</thead>
+            <tbody>${body}</tbody>
+          </table>
         </div>`;
     }
 
-    function renderPretty(data) {
-      // Render arrays of strings as tag list; objects as key sections; otherwise JSON
-      if (Array.isArray(data) && data.every(x => typeof x === 'string')) {
-        outEl.innerHTML = `
-          <div class="flex flex-wrap gap-2">
-            ${data.map(t => `<span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs">${escapeHTML(t)}</span>`).join('')}
-          </div>`;
+    // /query/<q>/studies (table)
+    function renderStudies(data){
+      const box = $('#studiesOut');
+
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); }
+        catch (e) {
+          box.innerHTML = `<div class="text-sm text-red-600">Response is not JSON (first 300 chars):</div>
+                           <pre class="text-xs whitespace-pre-wrap mt-2">${escapeHTML(data.slice(0,300))}</pre>`;
+          return;
+        }
+      }
+
+      const rows = Array.isArray(data) ? data
+                  : (data && Array.isArray(data.results) ? data.results : []);
+      const total = (data && typeof data.count === 'number') ? data.count : rows.length;
+
+      if (!rows || !rows.length){
+        box.innerHTML = '<div class="text-sm text-slate-500">No results.</div>';
         return;
       }
 
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        outEl.innerHTML = Object.entries(data).map(([k, v]) => {
-          if (Array.isArray(v)) {
-            return `
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-slate-700 mb-2">${escapeHTML(k)}</h3>
-                <div class="flex flex-wrap gap-2">
-                  ${v.map(x => `<span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs">${escapeHTML(String(x))}</span>`).join('')}
-                </div>
-              </div>`;
-          }
-          return `
-            <div class="mb-4">
-              <h3 class="text-sm font-semibold text-slate-700 mb-2">${escapeHTML(k)}</h3>
-              <pre class="bg-slate-50 border rounded p-3 overflow-auto">${escapeHTML(JSON.stringify(v, null, 2))}</pre>
-            </div>`;
-        }).join('');
-        return;
-      }
+      const cols = ['id','study_id','year','title','authors','journal'];
+      const td = (v) => (v==null) ? '' : (typeof v==='object' ? escapeHTML(JSON.stringify(v)) : escapeHTML(String(v)));
+      const head = cols.map(c => `<th class="px-3 py-2 text-left text-xs font-semibold bg-slate-50">${escapeHTML(c)}</th>`).join('');
+      const body = rows.map(r => `<tr>${cols.map(c => `<td class="px-3 py-2 border-t align-top text-sm">${td(r[c])}</td>`).join('')}</tr>`).join('');
 
-      // Fallback
-      outEl.innerHTML = `<pre class="bg-slate-50 border rounded p-3 overflow-auto">${escapeHTML(JSON.stringify(data, null, 2))}</pre>`;
+      box.innerHTML = `
+        <div class="text-xs text-slate-500 mb-2">Count: ${escapeHTML(String(total))}</div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full border rounded">
+            <thead><tr>${head}</tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>`;
     }
 
-    function renderRaw(data) {
-      outEl.textContent = JSON.stringify(data, null, 2);
-    }
+    // ---------- Wire-up ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      // load all terms
+      $('#btnAll')?.addEventListener('click', async () => {
+        $('#allTerms').innerHTML = spinner('Loading all terms…');
+        try { const data = await fetchJSON('/terms'); renderAllTerms(data); pushHistory('terms','(all)'); }
+        catch (e) { $('#allTerms').innerHTML = `<div class="text-red-500 text-sm">${escapeHTML(e.message)}</div>`; }
+      });
 
-    function escapeHTML(s) {
-      return String(s)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-    }
+      // related terms
+      $('#btnRelated')?.addEventListener('click', async () => {
+        const term = $('#termInput').value.trim();
+        if (!term){ $('#relatedOut').innerHTML = '<div class="text-sm text-slate-500">Please enter a term.</div>'; return; }
+        const path = `/terms/${encodeURIComponent(term)}`;
+        $('#urlTerms').innerHTML = `GET <a class="text-brand-600 underline" target="_blank" href="${API_BASE}${path}">${API_BASE}${path}</a>`;
+        $('#relatedOut').innerHTML = spinner('Searching related terms…');
+        try { const data = await fetchJSON(path); renderRelated(data); pushHistory('related', term); }
+        catch (e){ $('#relatedOut').innerHTML = `<div class="text-red-600 text-sm">${escapeHTML(e.message)}</div>`; }
+      });
 
-    async function fetchJSON(path) {
-      const url = `${API_BASE}${path}`;
-      setStatus(`GET ${url}`);
-      spinner('Fetching…');
-      try {
-        const resp = await fetch(url);
-        const ct = resp.headers.get('content-type') || '';
-        const info = `HTTP ${resp.status} ${resp.statusText}`;
-
-        if (!resp.ok) {
-          const text = await resp.text();
-          outEl.innerHTML = `<div class="text-red-600 text-sm">${escapeHTML(info)}</div><pre class="mt-2 bg-red-50 border border-red-200 rounded p-3 overflow-auto">${escapeHTML(text)}</pre>`;
+      // studies search (two inputs + operator)
+      document.getElementById('btnStudies')?.addEventListener('click', async () => {
+        const q = document.getElementById('studyInput').value.trim();
+        if (!q) {
+          document.getElementById('studiesOut').innerHTML =
+            '<div class="text-sm text-slate-500">Please enter a query.</div>';
           return;
         }
 
-        if (ct.includes('application/json')) {
-          lastData = await resp.json();
-        } else {
-          lastData = await resp.text();
+        const path = `/query/${encodeURIComponent(q)}/studies`;
+        document.getElementById('urlStudies').innerHTML =
+          `GET <a class="text-brand-600 underline" target="_blank" href="${API_BASE}${path}">${API_BASE}${path}</a>`;
+
+        document.getElementById('studiesOut').innerHTML = spinner('Searching studies…');
+
+        try {
+          const data = await fetchJSON(path);
+          renderStudies(data);
+          pushHistory('studies', q);
+        } catch (e) {
+          document.getElementById('studiesOut').innerHTML =
+            `<div class="text-red-600 text-sm">${escapeHTML(e.message)}</div>`;
         }
+      });
 
-        setStatus(`${info} · ${url}`);
-        renderPretty(lastData);
-      } catch (err) {
-        outEl.innerHTML = `<div class="text-red-600 text-sm">Error: ${escapeHTML(err?.message || String(err))}</div>
-        <pre class="mt-2 bg-red-50 border border-red-200 rounded p-3 overflow-auto">Common causes:\n1) CORS not allowed by the server\n2) Opening via file:// instead of http(s)\n3) Network/server issues</pre>`;
-      }
-    }
 
-    // Wire up controls
-    document.getElementById('btnAll').addEventListener('click', () => fetchJSON('/terms'));
-    document.getElementById('btnTerm').addEventListener('click', () => {
-      const term = document.getElementById('termInput').value.trim();
-      if (!term) { setStatus('請輸入一個 term'); return; }
-      fetchJSON(`/terms/${encodeURIComponent(term)}`);
-    });
-    document.getElementById('btnStudy').addEventListener('click', () => {
-      const q = document.getElementById('queryInput').value.trim();
-      if (!q) { setStatus('請輸入查詢字串'); return; }
-      fetchJSON(`/query/${encodeURIComponent(q)}/studies`);
-    });
+      // history actions
+      $('#history').addEventListener('click', (e) => {
+        const el = e.target.closest('.hist-item'); if (!el) return;
+        const type = el.dataset.type, q = el.dataset.q;
+        if (type === 'terms') $('#btnAll').click();
+        else if (type === 'related'){ $('#termInput').value = q; $('#btnRelated').click(); }
+        else if (type === 'studies'){
+          // 簡單回填：把整串查詢放到第一個輸入框，第二個清空
+          document.getElementById('studyInput1').value = q;
+          document.getElementById('studyInput2').value = '';
+          document.getElementById('studyOp').value = 'and';
+          document.getElementById('btnStudies').click();
+        }
+      });
+      $('#clearHistory').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); renderHistory(); });
 
-    // View toggle
-    viewPrettyBtn.addEventListener('click', () => {
-      if (lastData == null) return; renderPretty(lastData);
-      viewPrettyBtn.classList.add('bg-white');
-      viewRawBtn.classList.remove('bg-white');
+      // init history UI
+      renderHistory();
     });
-    viewRawBtn.addEventListener('click', () => {
-      if (lastData == null) return; renderRaw(lastData);
-      viewRawBtn.classList.add('bg-white');
-      viewPrettyBtn.classList.remove('bg-white');
-    });
-
-    // Initial message
-    outEl.innerHTML = '<div class="text-slate-600 text-sm">Ready. 選擇上方操作以開始。</div>';
   </script>
 </body>
 </html>
