@@ -1,7 +1,7 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/yOwut1-r)
 [![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=21196702&assignment_repo_type=AssignmentRepo)
 # 07
-## Neurosynth Frontend (Tailwind + AJAX)
+# Neurosynth Frontend (Tailwind + AJAX)
 
 This project provides an interactive AJAX-based web interface for exploring neuroscience meta-analytic data from
 https://hpc.psy.ntu.edu.tw:5000
@@ -15,8 +15,8 @@ associated terms with co-occurrence statistics,
 
 and study-level metadata filtered via logical search operators (and, not).
 
-### Features Overview
-1. Show All Terms Section
+## Features Overview
+### 1. Show All Terms Section
 
 Purpose:
 Displays all possible keywords available in the Neurosynth database.
@@ -37,7 +37,7 @@ Endpoint used:
 
 GET https://hpc.psy.ntu.edu.tw:5000/terms
 
-2. Associated Terms Section
+### 2. Associated Terms Section
 
 Purpose:
 Given a keyword, shows other terms that commonly co-occur with it,
@@ -68,7 +68,7 @@ GET https://hpc.psy.ntu.edu.tw:5000/terms/<term>
 Example:
 https://hpc.psy.ntu.edu.tw:5000/terms/amygdala
 
-3. Logical Studies Search
+### 3. Logical Studies Search
 
 Purpose:
 Performs a logical keyword search over the Neurosynth studies database and displays
@@ -112,7 +112,7 @@ https://hpc.psy.ntu.edu.tw:5000/query/amygdala/studies
 
 https://hpc.psy.ntu.edu.tw:5000/query/amygdala%20not%20emotion/studies
 
-4. History Section
+### 4. History Section
 
 Purpose:
 Keeps a record of all previously performed searches and allows quick re-execution.
@@ -135,7 +135,7 @@ Storage:
 Saved locally using localStorage as JSON (neurosearch_history_v1).
 
 
-### Technical Stack
+## Technical Stack
 Component	Description
 Frontend	HTML5 + Vanilla JS (ES6)
 Styling	Tailwind CSS via CDN
@@ -144,7 +144,7 @@ Backend API	Neurosynth API @ NTU
 Local Cache	Browser LocalStorage for history tracking
 
 
-### API Endpoints Summary
+## API Endpoints Summary
 Endpoint	Description
 /terms	List all available keywords
 /terms/<term>	List related / co-occurring terms
